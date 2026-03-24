@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-plugins",
-  "description": "Custom Claude Code plugins by tolusha",
+  "name": "che-plugins",
+  "description": "Eclipse Che Custom Claude Code plugins",
   "owner": {
     "name": "Anatolii Bazko"
   },
