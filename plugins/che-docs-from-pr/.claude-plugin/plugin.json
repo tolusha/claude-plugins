@@ -1,0 +1,7 @@
+{
+  "name": "che-docs-from-pr",
+  "description": "Generate che-docs AsciiDoc articles from GitHub PR code changes. Analyzes one or more PRs, suggests article type and target module, then creates the .adoc file and updates navigation.",
+  "author": {
+    "name": "Anatolii Bazko"
+  }
+}

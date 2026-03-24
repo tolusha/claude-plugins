@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-plugins",
+  "description": "Custom Claude Code plugins by tolusha",
+  "owner": {
+    "name": "Anatolii Bazko"
+  },
+  "plugins": [
+    {
+      "name": "che-docs-from-pr",
+      "description": "Generate che-docs AsciiDoc articles from GitHub PR code changes. Analyzes one or more PRs, suggests article type and target module, then creates the .adoc file and updates navigation.",
+      "author": {
+        "name": "Anatolii Bazko"
+      },
+      "source": "./plugins/che-docs-from-pr",
+      "category": "productivity",
+      "homepage": "https://github.com/tolusha/claude-plugins/tree/main/plugins/che-docs-from-pr"
+    }
+  ]
+}
