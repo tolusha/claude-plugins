@@ -146,6 +146,7 @@ Read the `antora.yml` file at the repo root to discover available product attrib
 - `{orch-name}` — orchestrator name (e.g., Kubernetes)
 - `{ocp}` — OpenShift Container Platform
 - `{platforms-name}` — platform name
+- `{prod-checluster}` — CheCluster CR name
 
 **Critical rule:** NEVER hardcode product names, platform names, or orchestrator names. Always use the attribute variables from `antora.yml`. For example, write `{prod-short}` instead of "Che" or "Eclipse Che".
 
@@ -207,6 +208,7 @@ Generate the `.adoc` file following this structure:
      .Verification
      * <How to verify the procedure worked>
      ```
+     **Note:** Only include the `.Verification` section if there is a meaningful, practical way for the user to verify the result. If the change is purely declarative (e.g., patching a CheCluster CR field) and there is no observable outcome to check beyond "the command succeeded", omit the `.Verification` section entirely.
 
    - **Concept:**
      ```adoc
@@ -269,7 +271,7 @@ Generate the `.adoc` file following this structure:
    ```adoc
    [source,shell,subs="+quotes,+attributes,+macros"]
    ----
-   {orch-cli} patch checluster/{prod-id-short} \
+   {orch-cli} patch checluster {prod-checluster} \
      --namespace {prod-namespace} \
      --type merge \
      --patch '{
