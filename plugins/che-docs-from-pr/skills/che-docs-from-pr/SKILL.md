@@ -307,20 +307,71 @@ If the navigation file has a nested structure, place the entry at the appropriat
 
 ---
 
-### Step 6: Summary
+### Step 6: Create a PR against che-docs
 
-After completing all steps, print a summary:
+After completing all steps, commit the changes and create a PR against `eclipse-che/che-docs`.
+
+#### 6a. Determine PR title prefix
+
+Choose the correct prefix based on the article type:
+
+| Article type | PR title prefix | Why |
+|---|---|---|
+| **Procedure** | `procedures:` | Includes procedures — engineering and QE review mandatory |
+| **Concept** | `docs:` | Documentation without procedures — engineering review mandatory |
+| **Reference** | `docs:` | Documentation without procedures — engineering review mandatory |
+| **Assembly** | `docs:` or `procedures:` | Use `procedures:` if it contains procedures, otherwise `docs:` |
+
+#### 6b. Format the PR body
+
+Use the che-docs PR template format. The PR body **must** follow this structure:
+
+```
+## What does this pull request change?
+
+<Describe the article created and what documentation it adds. Reference the source PR(s) that prompted this change.>
+
+## What issues does this pull request fix or reference?
+
+<List the source PR URLs. If they reference issues, list those too. Use "N/A" if none.>
+
+## Specify the version of the product this pull request applies to
+
+<Specify the version, or "next" if it applies to the upcoming release.>
+
+## Pull Request checklist
+
+The author and the reviewers validate the content of this pull request with the following checklist, in addition to the [automated tests](code_review_checklist.adoc).
+
+- Any procedure:
+  - [ ] Successfully tested.
+- Any page or link rename:
+  - [ ] The page contains a redirection for the previous URL.
+  - Propagate the URL change in:
+    - [ ] Dashboard [default branding data](https://github.com/eclipse-che/che-dashboard/blob/main/packages/dashboard-frontend/src/services/bootstrap/branding.constant.ts)
+- [ ] Builds on [Eclipse Che hosted by Red Hat](https://workspaces.openshift.com).
+- [ ] the *`Validate language on files added or modified`* step reports no vale warnings.
+```
+
+#### 6c. Create the PR
+
+Commit and push the changes, then create the PR:
+```
+gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 6b>"
+```
+
+#### 6d. Print summary
 
 ```
 ## Done
 
 **Article created:** `modules/<module>/pages/<filename>.adoc`
 **Navigation updated:** `modules/<module>/nav.adoc`
+**PR created:** <PR URL>
 
 ### Next steps
 1. Review the generated article and address any `// TODO:` comments
-2. Build the docs locally to verify rendering (if applicable)
-3. Commit the changes and create a PR against `eclipse-che/che-docs`
+2. Wait for CI checks and address any vale warnings
 ```
 
 ---
