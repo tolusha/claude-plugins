@@ -265,12 +265,39 @@ Generate the `.adoc` file following this structure:
    WARNING: <text>
    ```
 
-8. **TODO comments** — Where information from the PR is insufficient or ambiguous, insert:
+8. **CheCluster changes** — When the PR modifies CheCluster CR fields, do NOT print the full CheCluster YAML. Instead, provide an `oc patch` / `kubectl patch` command that applies only the relevant change. For example:
+   ```adoc
+   [source,shell,subs="+quotes,+attributes,+macros"]
+   ----
+   {orch-cli} patch checluster/{prod-id-short} \
+     --namespace {prod-namespace} \
+     --type merge \
+     --patch '{
+       "spec": {
+         "components": {
+           "cheServer": {
+             "extraProperties": {
+               "CHE_LIMITS_WORKSPACE_IDLE_TIMEOUT": "1800000"
+             }
+           }
+         }
+       }
+     }'
+   ----
+   ```
+   Always use `{orch-cli}` instead of literal `oc` or `kubectl`.
+
+9. **Cluster access prerequisite** — When a procedure or other article requires access to the cluster (e.g., running `{orch-cli}` commands, patching CheCluster, creating resources), add the following to the `.Prerequisites` section:
+   ```adoc
+   * An active `{orch-cli}` session with administrative permissions to the destination {orch-name} cluster. See {orch-cli-link}.
+   ```
+
+10. **TODO comments** — Where information from the PR is insufficient or ambiguous, insert:
    ```adoc
    // TODO: <describe what needs to be clarified or added>
    ```
 
-9. **Writing style:**
+11. **Writing style:**
    - Follow the Red Hat Style Guide and Modular Documentation Initiative
    - Use active voice ("Configure the timeout" not "The timeout is configured")
    - Be concise and direct
