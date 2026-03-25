@@ -307,11 +307,28 @@ If the navigation file has a nested structure, place the entry at the appropriat
 
 ---
 
-### Step 6: Create a PR against che-docs
+### Step 6: Build and Preview
+
+Run the preview script to build the docs and verify the new article renders correctly:
+
+```
+tools/runnerpreview.sh
+```
+
+Check the build output for errors. If the build fails:
+- Fix any AsciiDoc syntax errors in the generated article
+- Fix any broken `xref:` references
+- Re-run `tools/runnerpreview.sh` until the build succeeds
+
+Once the build succeeds, the preview will be available locally. Inform the user so they can review the rendered output before proceeding.
+
+---
+
+### Step 7: Create a PR against che-docs
 
 After completing all steps, commit the changes and create a PR against `eclipse-che/che-docs`.
 
-#### 6a. Determine PR title prefix
+#### 7a. Determine PR title prefix
 
 Choose the correct prefix based on the article type:
 
@@ -322,7 +339,7 @@ Choose the correct prefix based on the article type:
 | **Reference** | `docs:` | Documentation without procedures — engineering review mandatory |
 | **Assembly** | `docs:` or `procedures:` | Use `procedures:` if it contains procedures, otherwise `docs:` |
 
-#### 6b. Format the PR body
+#### 7b. Format the PR body
 
 Use the che-docs PR template format. The PR body **must** follow this structure:
 
@@ -353,14 +370,14 @@ The author and the reviewers validate the content of this pull request with the 
 - [ ] the *`Validate language on files added or modified`* step reports no vale warnings.
 ```
 
-#### 6c. Create the PR
+#### 7c. Create the PR
 
 Commit and push the changes, then create the PR:
 ```
-gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 6b>"
+gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 7b>"
 ```
 
-#### 6d. Print summary
+#### 7d. Print summary
 
 ```
 ## Done
