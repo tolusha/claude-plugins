@@ -338,18 +338,38 @@ If the navigation file has a nested structure, place the entry at the appropriat
 
 ### Step 6: Build and Preview
 
-Run the preview script to build the docs and verify the new article renders correctly:
+Run the preview script in the background to build the docs and start a local preview server:
+
+```bash
+tools/runnerpreview.sh > /tmp/preview.log 2>&1 &
+PREVIEW_PID=$!
+```
+
+The script runs a container that stays alive — it does **not** exit on its own. Monitor the output for errors or the preview URL:
+
+```bash
+tail -f /tmp/preview.log
+```
+
+Watch the output for:
+1. **Build errors** — If the build fails, kill the preview process (`kill $PREVIEW_PID`), fix AsciiDoc syntax errors or broken `xref:` references, and re-run the preview.
+2. **Preview URL** — Once the build succeeds, a preview URL will be printed in the output. Stop `tail` as soon as you see the URL.
+
+Present the preview URL to the user using `AskUserQuestion`:
 
 ```
-tools/runnerpreview.sh
+The preview is ready:
+
+<preview URL>
+
+Please review the rendered article. Is the article OK to proceed?
 ```
 
-Check the build output for errors. If the build fails:
-- Fix any AsciiDoc syntax errors in the generated article
-- Fix any broken `xref:` references
-- Re-run `tools/runnerpreview.sh` until the build succeeds
+Wait for the user to confirm the article looks correct. Once confirmed, terminate the preview:
 
-Once the build succeeds, the preview will be available locally. Inform the user so they can review the rendered output before proceeding.
+```bash
+kill $PREVIEW_PID
+```
 
 ---
 
