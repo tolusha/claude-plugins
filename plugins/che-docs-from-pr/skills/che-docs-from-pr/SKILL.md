@@ -8,6 +8,7 @@ allowed-tools:
   - Edit
   - Glob
   - Grep
+  - Agent
   - AskUserQuestion
 ---
 
@@ -25,27 +26,74 @@ Follow these steps in order. Do not skip steps.
 
 ### Step 1: Fetch PR Data
 
-For **each** PR URL provided by the user:
+Use **subagents** to gather all PR information in parallel. For each PR URL provided by the user, launch a separate subagent. If multiple PRs are provided, launch all subagents concurrently in a single message.
 
-1. Run:
-   ```
-   gh pr view <URL> --json title,body,files,labels,state
-   ```
-2. Run:
-   ```
-   gh pr diff <URL>
-   ```
-3. Extract and record:
-   - PR title
-   - PR description/body
-   - List of changed files (with paths)
-   - Full diff content
-   - Labels and state
+#### Subagent task for each PR
 
-4. After processing all PRs, build a **combined summary** of all changes. Group related changes together. Identify:
-   - What component or feature is affected
-   - What kind of change it is (new feature, configuration change, API update, behavioral change, bug fix, deprecation, etc.)
-   - Key technical details from the diff (new flags, config options, API fields, environment variables, CLI arguments, etc.)
+Each subagent must gather the following data for its assigned PR:
+
+**1a. Core PR data:**
+```
+gh pr view <URL> --json title,body,files,labels,state,url,number
+```
+
+**1b. PR diff:**
+```
+gh pr diff <URL>
+```
+
+**1c. All PR comments** (review comments, general comments, and review summaries):
+```
+gh pr view <URL> --json comments,reviews,reviewDecision
+```
+This captures:
+- General PR comments (discussion, questions, clarifications)
+- Review comments (inline code review feedback)
+- Review decisions (approved, changes requested)
+
+**1d. Discover related PRs and issues:**
+
+Parse the PR body and comments for references to:
+- Other PRs: patterns like `#123`, `org/repo#123`, or full GitHub PR URLs
+- Issues: patterns like `fixes #123`, `closes #123`, `resolves #123`, or full GitHub issue URLs
+- Cross-repo references: `org/repo#123`
+
+**1e. Fetch related PRs and issues:**
+
+For each discovered reference, fetch:
+- **Related PRs:**
+  ```
+  gh pr view <ref> --json title,body,comments,reviews,state,url
+  ```
+- **Related issues:**
+  ```
+  gh issue view <ref> --json title,body,comments,state,url
+  ```
+
+Extract from related PRs/issues:
+- Title and description/body
+- All comments (these often contain design decisions, requirements, and context)
+- State (open/closed/merged)
+
+**1f. Subagent output:**
+
+Each subagent must return a structured summary containing:
+- PR title, URL, state, labels
+- PR description/body (full text)
+- List of changed files (with paths)
+- Full diff content
+- All PR comments and review comments (with authors)
+- List of related PRs/issues with their titles, descriptions, and comments
+
+#### After all subagents complete
+
+Build a **combined summary** of all changes from all subagent results. Group related changes together. Identify:
+- What component or feature is affected
+- What kind of change it is (new feature, configuration change, API update, behavioral change, bug fix, deprecation, etc.)
+- Key technical details from the diff (new flags, config options, API fields, environment variables, CLI arguments, etc.)
+- Design decisions and context from PR/issue comments
+- Requirements or constraints mentioned in related issues
+- Reviewer feedback that clarifies intent or correct behavior
 
 ---
 
