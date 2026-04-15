@@ -9,6 +9,7 @@ allowed-tools:
   - Glob
   - Grep
   - Agent
+  - Skill
   - AskUserQuestion
 ---
 
@@ -384,7 +385,58 @@ If the navigation file has a nested structure, place the entry at the appropriat
 
 ---
 
-### Step 6: Build and Preview
+### Step 6: Run CQA Quality Assessment
+
+Run the CQA 2.1 content quality assessment against the generated article to detect and automatically fix all possible issues **before** the user previews the content.
+
+Invoke the `/cqa-tools:cqa-assess` skill with these pre-set parameters (do **not** prompt the user for scope or mode — they are already decided):
+
+- **Docs repo path:** the current working directory (the `eclipse-che/che-docs` clone)
+- **Scope:** `topic` — the single file generated in Step 4: `modules/<module>/pages/<filename>.adoc`
+- **Mode:** `fix` — automatically fix all fixable issues, then re-verify
+- **Severity filtering:** `all` — run all parameters
+
+The CQA assessment runs 10 sub-skills in dependency order. Fixes from earlier steps prevent false positives in later ones:
+
+| Order | Skill | Parameters | What it checks |
+|-------|-------|------------|----------------|
+| 1 | `cqa-tools:cqa-vale-check` | P1 | Vale DITA style linting |
+| 2 | `cqa-tools:cqa-modularization` | P2-P7 | Module structure, prefixes, templates |
+| 3 | `cqa-tools:cqa-titles-descriptions` | P8-P11 | Titles, abstracts, character limits |
+| 4 | `cqa-tools:cqa-procedures` | P12, Q12-Q16 | Prerequisites, steps, verification |
+| 5 | `cqa-tools:cqa-editorial` | P13-P14, Q1-Q5, Q18, Q20 | Grammar, readability, scannability |
+| 6 | `cqa-tools:cqa-links` | P15-P17, Q24-Q25 | Cross-references, broken links |
+| 7 | `cqa-tools:cqa-legal-branding` | P18-P19, Q17, Q23, O1-O5 | Product names, disclaimers, compliance |
+| 8 | `cqa-tools:cqa-user-focus` | Q6-Q11 | Audience targeting, acronyms, admonitions |
+| 9 | `cqa-tools:cqa-tables-images` | Q19, Q21-Q22 | Table captions, image alt text |
+| 10 | `cqa-tools:cqa-onboarding` | O6-O10 | Publishing readiness |
+
+For each sub-skill:
+
+1. Invoke the skill using `Skill` tool
+2. Run checks scoped to the generated topic file only
+3. Fix all fixable issues directly in the `.adoc` file
+4. Re-run checks to verify 0 issues remain
+5. Record the score (1-4) with evidence
+
+After all 10 sub-skills complete, invoke `cqa-tools:cqa-report` to generate a summary. Print a brief CQA results overview to the user:
+
+```
+**CQA Assessment Complete**
+
+- Parameters checked: <N>
+- Issues found: <N>
+- Issues fixed: <N>
+- Remaining (manual): <N>
+
+<list any issues that could not be auto-fixed and need manual attention>
+```
+
+If any issues require manual attention, note them but proceed to the next step — the user will review during the preview.
+
+---
+
+### Step 7: Build and Preview
 
 Run the preview script in the background to build the docs and start a local preview server:
 
@@ -421,11 +473,11 @@ kill $PREVIEW_PID
 
 ---
 
-### Step 7: Create a PR against che-docs
+### Step 8: Create a PR against che-docs
 
 After completing all steps, commit the changes and create a PR against `eclipse-che/che-docs`.
 
-#### 7a. Determine PR title prefix
+#### 8a. Determine PR title prefix
 
 Choose the correct prefix based on the article type:
 
@@ -436,7 +488,7 @@ Choose the correct prefix based on the article type:
 | **Reference** | `docs:` | Documentation without procedures — engineering review mandatory |
 | **Assembly** | `docs:` or `procedures:` | Use `procedures:` if it contains procedures, otherwise `docs:` |
 
-#### 7b. Format the PR body
+#### 8b. Format the PR body
 
 Use the che-docs PR template format. The PR body **must** follow this structure:
 
@@ -467,14 +519,14 @@ The author and the reviewers validate the content of this pull request with the 
 - [ ] the *`Validate language on files added or modified`* step reports no vale warnings.
 ```
 
-#### 7c. Create the PR
+#### 8c. Create the PR
 
 Commit and push the changes, then create the PR:
 ```
-gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 7b>"
+gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 8b>"
 ```
 
-#### 7d. Print summary
+#### 8d. Print summary
 
 ```
 ## Done
