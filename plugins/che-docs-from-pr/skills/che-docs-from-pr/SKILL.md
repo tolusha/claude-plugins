@@ -1,6 +1,6 @@
 ---
 name: che-docs-from-pr
-description: Generate che-docs AsciiDoc articles from GitHub PR code changes. Analyzes one or more PRs, suggests article type and target module, then creates the .adoc file and updates navigation.
+description: Generate or update che-docs AsciiDoc articles from GitHub PR code changes. Analyzes one or more PRs, searches for existing related articles, and either updates them or creates new ones.
 allowed-tools:
   - Bash
   - Read
@@ -15,7 +15,7 @@ allowed-tools:
 
 # che-docs-from-pr
 
-Generate an AsciiDoc article for the `eclipse-che/che-docs` repository based on one or more GitHub pull request URLs.
+Generate or update AsciiDoc articles for the `eclipse-che/che-docs` repository based on one or more GitHub pull request URLs.
 
 **Important:** You are running inside a cloned `eclipse-che/che-docs` repository. All file paths are relative to this repo root.
 
@@ -100,11 +100,43 @@ Build a **combined summary** of all changes from all subagent results. Group rel
 
 ### Step 2: Analyze and Suggest
 
-Based on the combined summary from Step 1, determine the best article to write.
+Based on the combined summary from Step 1, determine the best article to write — or identify existing articles to update.
 
-#### 2a. Determine article type
+#### 2a. Search for existing related articles
 
-Choose one:
+Before proposing a new article, search the docs for existing articles that cover the same topic, feature, or component:
+
+```bash
+grep -rl "<keyword1>\|<keyword2>\|<keyword3>" modules/*/pages/ --include="*.adoc" -l
+```
+
+Use multiple keywords derived from the PR summary — feature names, config option names, component names, CLI flags, etc. Also search by title patterns:
+
+```bash
+grep -rl "= .*<topic>" modules/*/pages/ --include="*.adoc" -l
+```
+
+For each match, read the first 20 lines to check the title and description:
+```bash
+head -20 <matched-file>
+```
+
+Classify matches as:
+- **Strong match** — the article already documents the exact feature or config area being changed
+- **Weak match** — the article is related but covers a different aspect
+
+#### 2b. Decide: update existing or create new
+
+| Situation | Action |
+|-----------|--------|
+| **Strong match found** — an existing article covers the same feature/config/workflow | **Update** the existing article |
+| **Multiple strong matches** | **Update** the most relevant one (or multiple if changes span topics) |
+| **Only weak matches** | **Create** a new article (but cross-reference the related ones) |
+| **No matches** | **Create** a new article |
+
+#### 2c. Determine article type (for new articles only)
+
+If creating a new article, choose one:
 
 | Type | When to use | Examples |
 |------|-------------|----------|
@@ -113,7 +145,7 @@ Choose one:
 | **Reference** | New config options, API fields, CLI flags, environment variables | Tables of options, parameter lists |
 | **Assembly** | Large features that span multiple topics | Combines multiple includes into one page |
 
-#### 2b. Determine target module
+#### 2d. Determine target module (for new articles only)
 
 List available modules by running:
 ```
@@ -127,7 +159,7 @@ Common modules:
 
 Choose the module that best fits the content.
 
-#### 2c. Suggest a filename
+#### 2e. Suggest a filename (for new articles only)
 
 - Use lowercase with dashes: `configuring-workspace-idle-timeout.adoc`
 - Use a verb prefix matching the article type:
@@ -136,9 +168,29 @@ Choose the module that best fits the content.
   - Reference: noun phrase like `devfile-reference`, `cli-flags`
   - Assembly: noun phrase describing the feature area
 
-#### 2d. Present suggestions to the user
+#### 2f. Present suggestions to the user
 
-Use `AskUserQuestion` to present your suggestions. Format the question exactly like this:
+Use `AskUserQuestion` to present your suggestions.
+
+**If updating an existing article:**
+
+```
+Based on my analysis of the PR(s), I found an existing article to update:
+
+**PR Summary:** <one-paragraph summary of what the PR(s) change>
+
+**Existing article:** `modules/<module>/pages/<filename>.adoc`
+**Article title:** <current title of the existing article>
+**Planned changes:** <brief description of what will be added/modified — e.g., "Add a new step for configuring X", "Add new config options to the reference table", "Update the procedure to reflect the new default value">
+
+Do you agree with updating this article? You can:
+- Confirm as-is
+- Choose a different existing article to update
+- Request creating a new article instead
+- Provide additional context about what should change
+```
+
+**If creating a new article:**
 
 ```
 Based on my analysis of the PR(s), here are my suggestions:
@@ -165,15 +217,22 @@ Do you agree with these suggestions? You can:
 Wait for the user's response. They may:
 - Confirm everything as-is
 - Override any of: article type, target module, filename, article title
+- Switch between update mode and create-new mode
 - Provide additional context or instructions
 
 Apply any overrides before proceeding.
 
 ---
 
-### Step 4: Generate the Article
+### Step 4: Generate or Update the Article
 
-#### 4a. Read the template
+Follow **Path A** if creating a new article, or **Path B** if updating an existing article.
+
+---
+
+#### Path A: Create a New Article
+
+##### 4a. Read the template
 
 Read the matching template from the che-docs repo:
 ```
@@ -185,7 +244,7 @@ templates/assembly.adoc
 
 Use `Read` to get the template content for the chosen article type. If the template file does not exist, use the format rules below as a fallback.
 
-#### 4b. Read product variables
+##### 4b. Read product variables
 
 Read the `antora.yml` file at the repo root to discover available product attributes. Common ones include:
 - `{prod}` — full product name
@@ -199,7 +258,7 @@ Read the `antora.yml` file at the repo root to discover available product attrib
 
 **Critical rule:** NEVER hardcode product names, platform names, or orchestrator names. Always use the attribute variables from `antora.yml`. For example, write `{prod-short}` instead of "Che" or "Eclipse Che".
 
-#### 4c. Study existing articles
+##### 4c. Study existing articles
 
 Scan 2-3 existing articles in the target module to match the writing style:
 ```
@@ -211,7 +270,7 @@ Then read 2-3 representative files to understand:
 - How they format sections, lists, code blocks
 - How they reference other pages with `xref:`
 
-#### 4d. Write the article
+##### 4d. Write the article
 
 Generate the `.adoc` file following this structure:
 
@@ -295,6 +354,56 @@ Generate the `.adoc` file following this structure:
      include::partial$<included-file>.adoc[]
      ```
 
+---
+
+#### Path B: Update an Existing Article
+
+##### 4a. Read the existing article
+
+Read the full content of the existing article:
+```
+modules/<module>/pages/<filename>.adoc
+```
+
+Understand its current structure: metadata, sections, steps, tables, admonitions.
+
+##### 4b. Read product variables
+
+Read the `antora.yml` file at the repo root to discover available product attributes. Follow the same rules as Path A — never hardcode product names.
+
+##### 4c. Determine what to change
+
+Based on the PR diff and combined summary, identify the minimal set of changes needed. Common update patterns:
+
+| Article type | Typical update |
+|---|---|
+| **Procedure** | Add/modify/reorder steps, add new prerequisites, update code examples, update verification steps |
+| **Concept** | Add a new subsection, update explanations to reflect new behavior, add/update diagrams or examples |
+| **Reference** | Add new rows to parameter tables, update default values, update descriptions, add new columns |
+| **Assembly** | Add new `include::` directives for new sub-topics |
+
+##### 4d. Apply changes surgically
+
+Use the `Edit` tool to make targeted changes — do **not** rewrite the entire file. Preserve:
+- All existing metadata (`:description:`, `:keywords:`, `:navtitle:`, `:page-aliases:`)
+- All existing section IDs
+- All existing content that is not affected by the PR
+- The overall structure and ordering of the article
+
+Update the `:description:` and `:keywords:` metadata only if the PR changes significantly expand the scope of the article.
+
+**Rules for updates:**
+- **Add new steps** to procedures at the logical position — not always at the end
+- **Add new table rows** to reference tables in alphabetical order or grouped with related options
+- **Update existing content** when the PR changes behavior, defaults, or requirements — do not leave stale information
+- **Add admonitions** (NOTE, IMPORTANT, WARNING) when the PR introduces caveats, deprecations, or breaking changes
+- Follow the same writing style, voice, and formatting as the existing content
+- Use `// TODO:` comments where PR information is insufficient
+
+---
+
+#### Common rules (both paths)
+
 5. **Cross-references** — When referring to other existing che-docs pages, use `xref:<page>.adoc[]` syntax. Search existing pages to find relevant ones:
    ```
    grep -r "<keyword>" modules/*/pages/ --include="*.adoc" -l
@@ -358,14 +467,16 @@ Generate the `.adoc` file following this structure:
 
 #### 4e. Save the article
 
-Write the file to:
-```
-modules/<module>/pages/<filename>.adoc
-```
+- **New article (Path A):** Write the file to `modules/<module>/pages/<filename>.adoc`
+- **Updated article (Path B):** Changes were already applied in-place via `Edit` in step 4d
 
 ---
 
 ### Step 5: Update Navigation
+
+**Skip this step entirely if updating an existing article** — it is already in `nav.adoc`.
+
+For new articles only:
 
 1. Read the navigation file:
    ```
@@ -490,12 +601,43 @@ Choose the correct prefix based on the article type:
 
 #### 8b. Format the PR body
 
-Use the che-docs PR template format. The PR body **must** follow this structure:
+Use the che-docs PR template format. The PR body **must** follow this structure.
+
+**For new articles:**
 
 ```
 ## What does this pull request change?
 
 <Describe the article created and what documentation it adds. Reference the source PR(s) that prompted this change.>
+
+## What issues does this pull request fix or reference?
+
+<List the source PR URLs. If they reference issues, list those too. Use "N/A" if none.>
+
+## Specify the version of the product this pull request applies to
+
+<Specify the version, or "next" if it applies to the upcoming release.>
+
+## Pull Request checklist
+
+The author and the reviewers validate the content of this pull request with the following checklist, in addition to the [automated tests](code_review_checklist.adoc).
+
+- Any procedure:
+  - [ ] Successfully tested.
+- Any page or link rename:
+  - [ ] The page contains a redirection for the previous URL.
+  - Propagate the URL change in:
+    - [ ] Dashboard [default branding data](https://github.com/eclipse-che/che-dashboard/blob/main/packages/dashboard-frontend/src/services/bootstrap/branding.constant.ts)
+- [ ] Builds on [Eclipse Che hosted by Red Hat](https://workspaces.openshift.com).
+- [ ] the *`Validate language on files added or modified`* step reports no vale warnings.
+```
+
+**For updated articles:**
+
+```
+## What does this pull request change?
+
+<Describe what was updated in the existing article and why. Summarize the specific changes made (new steps added, table rows updated, descriptions modified, etc.). Reference the source PR(s) that prompted this update.>
 
 ## What issues does this pull request fix or reference?
 
@@ -528,6 +670,8 @@ gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" 
 
 #### 8d. Print summary
 
+**For new articles:**
+
 ```
 ## Done
 
@@ -537,6 +681,19 @@ gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" 
 
 ### Next steps
 1. Review the generated article and address any `// TODO:` comments
+2. Wait for CI checks and address any vale warnings
+```
+
+**For updated articles:**
+
+```
+## Done
+
+**Article updated:** `modules/<module>/pages/<filename>.adoc`
+**PR created:** <PR URL>
+
+### Next steps
+1. Review the changes and address any `// TODO:` comments
 2. Wait for CI checks and address any vale warnings
 ```
 
