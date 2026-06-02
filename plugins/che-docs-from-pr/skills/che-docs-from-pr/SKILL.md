@@ -612,8 +612,9 @@ The author and the reviewers validate the content of this pull request with the 
 
 #### 7c. Create the PR
 
-Commit and push the changes, then create the PR:
+Commit the changes with `--signoff`, push, and create the PR:
 ```
+git commit --signoff -m "<commit message>"
 gh pr create --repo eclipse-che/che-docs --title "<prefix> <Short description>" --body "<formatted body from 7b>"
 ```
 
